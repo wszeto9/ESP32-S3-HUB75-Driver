@@ -39,16 +39,22 @@ void setup() {
   digitalWrite(BUCK_EN, HIGH);
 
   pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
 
 }
 
 void loop() {
+  if(usbpd_sink_get_ready()){
+      usbpd_sink_set_request_fixed_voltage(setVoltage);
+  }
   uint16_t PD_Voltage = analogRead(PA3) >> 10;
+  /*
   for(int counter = 0; counter < PD_Voltage; counter ++){
     digitalWrite(LED_BUILTIN, HIGH);
     delay(200);
     digitalWrite(LED_BUILTIN, LOW);
     delay(200);
   }
+  */
   delay(1000);
 }
