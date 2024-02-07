@@ -92,11 +92,13 @@ void loop() {
         if(prediction["relationships"]["stop"]["data"]["id"] == "95"){
           Serial.print("Index ");
           Serial.print(idx);
-          Serial.println(" is for stop 95 (Beacon St.)");
+          Serial.print(" is for stop 95 (Beacon St.) Arrival time: ");
           String arrivalTime = prediction["attributes"]["arrival_time"].as<String>();
           String ParsedTime = arrivalTime.substring(11, 16);
           Serial.println(ParsedTime);
-          drawText(ParsedTime);
+          if(arrivalTime.substring(13, 14) == ":"){
+            drawText(ParsedTime);
+          }
         }
       }
     }

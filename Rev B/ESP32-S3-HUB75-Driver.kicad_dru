@@ -1,0 +1,5 @@
+(version 1)
+(rule "test"
+	(condition "A.Reference == 'H*'")
+	(severity exclusion)
+)
