@@ -29,3 +29,4 @@ fp-info-cache
 *.csv
 *.lck
 Rev B/\#auto_saved_files\#
+Firmware/ESP32S3_Firmware/WifiPassword.h

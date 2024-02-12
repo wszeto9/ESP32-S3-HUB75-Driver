@@ -9,7 +9,7 @@ route = "1" #1 Bus
 
 
 def GetETAMIT():
-    MITSaferideApi = "https://passiogo.com/mapGetData.php?eta=3&deviceId=34241398&stopIds=992&routeId=45003&position=8&userId=94&routeIds=332,45003"
+    MITSaferideApi = "https://passiogo.com/mapGetData.php?eta=3&deviceId=34241398&stopIds=992&userId=94"
     response = requests.get(MITSaferideApi)
     print(response.text + "\n")
     if(response.status_code != 200):
@@ -52,8 +52,8 @@ def GetPredictionFromIDMBTA(tripID, stop_id = stop_id_Beacon, route = "1", direc
     return "Error: No prediction found"
 
 if __name__ == "__main__":
-    TripIDs = GetTripIDsMBTA()
-    print(TripIDs)
+    # TripIDs = GetTripIDsMBTA()
+    # print(TripIDs)
     ETAs = GetETAMIT()
     print(ETAs)
     
