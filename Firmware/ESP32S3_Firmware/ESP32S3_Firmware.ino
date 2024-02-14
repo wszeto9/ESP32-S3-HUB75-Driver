@@ -58,16 +58,43 @@ void IRAM_ATTR timerISR() {
   drawXbm565(57, 16, 7, 7, MBTA_bits, dma_display->color565(MBTAColor[0],MBTAColor[1],MBTAColor[2]));
   drawXbm565(57, 24, 7, 7, MBTA_bits, dma_display->color565(MBTAColor[0],MBTAColor[1],MBTAColor[2]));
   drawXbm565(53, 33, 11, 7, MIT_bits, dma_display->color565(MITColor[0],MITColor[1],MITColor[2]));
+  drawXbm565(40, 0, 6, 7, bus_bits, dma_display->color565(MBTAColor[0],MBTAColor[1],MBTAColor[2]));
+  drawXbm565(30, 0, 7, 7, walk_bits, dma_display->color565(MBTAColor[0],MBTAColor[1],MBTAColor[2]));
+  drawXbm565(0, 56, 7, 7, clock_circle_bits, dma_display->color565(MBTAColor[0],MBTAColor[1],MBTAColor[2]));
+  drawXbm565(0, 56, 7, 7, clock_hands_bits, dma_display->color565(MITColor[0],MITColor[1],MITColor[2]));
+
 }
 
 void refreshScreen(){
   dma_display->clearScreen();
   dma_display->setCursor(0, 0);    // start at top left, with 8 pixel of spacing
   for(int i = 0; i < 8; i++){
-    drawText(DisplayBuffer[i], LineColorsRed[i],LineColorsGreen[i],LineColorsBlue[i]);
-    //Serial.println(DisplayBuffer[i]);
+    if(i == 7){
+      dma_display->setCursor(5, 56);
+    }
+    int redraw = 0;
+    if(i == 4){
+      String text = DisplayBuffer[i];
+      if(text[7] == 'i'){
+        drawText(DisplayBuffer[i].substring(0,5), LineColorsRed[i],LineColorsGreen[i],LineColorsBlue[i]);
+        dma_display->setCursor(33, 32);
+        drawText("min", LineColorsRed[i],LineColorsGreen[i],LineColorsBlue[i]);
+        redraw = 1;
+      }
+    }
+    if(i == 5){
+      String text = DisplayBuffer[i];
+      if(text[7] == 'i'){
+        drawText(DisplayBuffer[i].substring(0,5), LineColorsRed[i],LineColorsGreen[i],LineColorsBlue[i]);
+        dma_display->setCursor(33, 40);
+        drawText("min", LineColorsRed[i],LineColorsGreen[i],LineColorsBlue[i]);
+        redraw = 1;
+      }
+    }
+    if(!redraw){
+      drawText(DisplayBuffer[i], LineColorsRed[i],LineColorsGreen[i],LineColorsBlue[i]);
+    }
   }
-  //Serial.println(" "); 
 }
 
 void timerISRInit(){
@@ -87,10 +114,7 @@ void drawText(String text, uint8_t r, uint8_t g, uint8_t b)
 
 void initMatrix(){
 
-  DisplayBuffer[0] = "Buses at: ";
-  DisplayBuffer[5] = "9 min walk";
-  DisplayBuffer[6] = "Time now:";
-
+  DisplayBuffer[0] = "9 min   in:";
   LineColorsRed[0] = DefaultTextColor[0];
   LineColorsGreen[0] = DefaultTextColor[1];
   LineColorsBlue[0] = DefaultTextColor[2];
@@ -141,14 +165,22 @@ void getUpdateMITShuttleTimes(){
       Serial.println(error2.f_str());
       return;
     }
-    JsonObject predictions = doc["ETAs"]["992"][0];
-    String ArrivalTime = predictions["eta"].as<String>();
-    if(ArrivalTime.substring(0,9) == "less than"){
-      ArrivalTime = "<1 min";
+
+    JsonObject ETAs = doc["ETAs"];
+    int index = 4;
+    for (JsonPair eta : ETAs) {
+      JsonArray predictions = eta.value().as<JsonArray>();
+      JsonObject prediction = predictions[0];
+      String ArrivalTime = prediction["eta"].as<String>();
+      if(ArrivalTime.substring(0,9) == "less than"){
+        ArrivalTime = "<1 min";
+      }
+      DisplayBuffer[index] = ArrivalTime;
+      Serial.println(ArrivalTime);
+      LineColorsRed[index] = 255;
+      LineColorsBlue[index] = 44;
+      index++;
     }
-    DisplayBuffer[4] = ArrivalTime;
-    LineColorsRed[4] = 255;
-    LineColorsBlue[4] = 44;
   }
   if(timeClient.getHours() < 1 && timeClient.getHours() < 18){
     DisplayBuffer[4] = "No.";
@@ -283,7 +315,7 @@ void loop() {
     getUpdateMITShuttleTimes();
   }
   Serial.println(timeClient.getFormattedTime().substring(0,5));
-  DisplayBuffer[7] = timeClient.getFormattedTime().substring(0,5);
+  DisplayBuffer[7] = " now:" + timeClient.getFormattedTime().substring(0,5);
   LineColorsRed[7] = DefaultTextColor[0];
   LineColorsGreen[7] = DefaultTextColor[1];
   LineColorsBlue[7] = DefaultTextColor[2];

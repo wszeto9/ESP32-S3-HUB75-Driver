@@ -20,7 +20,7 @@
 #define PANEL_RES_Y 32     // Number of pixels tall of each INDIVIDUAL panel module.
 #define PANEL_CHAIN 1      // Total number of panels chained one to another
 
-#define BRIGHTNESS 90
+#define BRIGHTNESS 255
 #define displayRotation 3
 
 #endif
