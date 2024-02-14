@@ -1,3 +1,5 @@
+#define REV_A02
+
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
 #include "LEDMatrixConfig.h"
 
