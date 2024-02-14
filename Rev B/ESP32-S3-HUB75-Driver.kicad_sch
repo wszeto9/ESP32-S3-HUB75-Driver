@@ -6,8 +6,8 @@
 
   (title_block
     (title "Main")
-    (date "2024-02-03")
-    (rev "B01")
+    (date "2024-02-14")
+    (rev "B02")
   )
 
   (lib_symbols
