@@ -1,11 +1,15 @@
-#define REV_A02
+//Display Refresh is on a ~ 60Hz timer interrupt. It grabs data from global variables and redraws the display if needed
+
+//Buttons are on a pin change interrupt. They edit the values of the last time a button is pressed. 
+
+#define REV_B01
 
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
 #include "LEDMatrixConfig.h"
 
 MatrixPanel_I2S_DMA *dma_display = nullptr;
 
-int counterHigh = 90;
+int counterHigh = 0;
 int counterLow = 0;
 int counterLowDisplay = 0;
 
@@ -18,6 +22,51 @@ unsigned long delayHighOld = 0;
 unsigned long delayLowOld = 0;
 
 hw_timer_t * timer = NULL;
+
+unsigned long lastButtonPressHighTime;
+unsigned long lastButtonPressLowTime;
+
+uint8_t lastButtonHigh;
+uint8_t lastButtonLow;
+
+void handleButtonInterrupts(uint8_t buttonNumber){
+  if(buttonNumber > 2 && lastButtonHigh != buttonNumber && (lastButtonPressHighTime + 500) < millis()){
+    counterHigh ++;
+    lastButtonPressHighTime = millis();
+    delayHigh = 0;
+    lastButtonHigh = buttonNumber;
+  }
+  else if(buttonNumber < 3 && lastButtonLow != buttonNumber && (lastButtonPressLowTime + 500) < millis()){
+    counterLow ++;
+    lastButtonPressLowTime = millis();
+    delayLow = 0;
+    lastButtonLow = buttonNumber;
+  }
+}
+
+void IRAM_ATTR ButtonInterruptFunction1(){
+  handleButtonInterrupts(1);
+}
+void IRAM_ATTR ButtonInterruptFunction2(){
+  handleButtonInterrupts(2);
+}
+void IRAM_ATTR ButtonInterruptFunction3(){
+  handleButtonInterrupts(3);
+}
+void IRAM_ATTR ButtonInterruptFunction4(){
+  handleButtonInterrupts(4);
+}
+
+void buttonSetup(){
+  pinMode(BUTTON_INPUT_1, INPUT_PULLUP);
+  pinMode(BUTTON_INPUT_2, INPUT_PULLUP);
+  pinMode(BUTTON_INPUT_3, INPUT_PULLUP);
+  pinMode(BUTTON_INPUT_4, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_1), ButtonInterruptFunction1, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_2), ButtonInterruptFunction2, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_3), ButtonInterruptFunction3, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_4), ButtonInterruptFunction4, CHANGE);
+}
 
 
 void initDisplay(){
@@ -127,13 +176,13 @@ void setup() {
   Serial.begin(115200);
   initDisplay();
   timerISRInit();
+  buttonSetup();
 }
 
 void loop() {
-  counterHigh++;
-  delayHigh = 0;
-  delay(2000);
-  counterLow++;
-  delayLow = 0;
-  delay(1500);
+  Serial.print("Counter High: ");
+  Serial.print(counterHigh);
+  Serial.print(", Counter Low: ");
+  Serial.println(counterLow);
+  delay(100);
 }
