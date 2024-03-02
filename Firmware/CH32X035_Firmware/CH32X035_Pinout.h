@@ -39,6 +39,7 @@
   #define BARREL_SENSE PA1
   #define BUCK_EN PB3
   #define LED_BUILTIN PB9
+  #define SenseDividerRatio 10
 
 #endif
 
