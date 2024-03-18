@@ -6,6 +6,7 @@
 
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
 #include "LEDMatrixConfig.h"
+#include "ImageAssets.h"
 
 MatrixPanel_I2S_DMA *dma_display = nullptr;
 
@@ -57,17 +58,22 @@ void IRAM_ATTR ButtonInterruptFunction4(){
   handleButtonInterrupts(4);
 }
 
-void buttonSetup(){
-  pinMode(BUTTON_INPUT_1, INPUT_PULLUP);
-  pinMode(BUTTON_INPUT_2, INPUT_PULLUP);
-  pinMode(BUTTON_INPUT_3, INPUT_PULLUP);
-  pinMode(BUTTON_INPUT_4, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_1), ButtonInterruptFunction1, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_2), ButtonInterruptFunction2, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_3), ButtonInterruptFunction3, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_4), ButtonInterruptFunction4, CHANGE);
+void drawXbm565(int x, int y, int width, int height, const char *xbm, uint16_t color = 0xffff) 
+{
+  if (width % 8 != 0) {
+      width =  ((width / 8) + 1) * 8;
+  }
+    for (int i = 0; i < width * height / 8; i++ ) {
+      unsigned char charColumn = pgm_read_byte(xbm + i);
+      for (int j = 0; j < 8; j++) {
+        int targetX = (i * 8 + j) % width + x;
+        int targetY = (8 * i / (width)) + y;
+        if (bitRead(charColumn, j)) {
+          dma_display->drawPixel(targetX, targetY, color);
+        }
+      }
+    }
 }
-
 
 void initDisplay(){
   HUB75_I2S_CFG::i2s_pins _pins={R1_PIN, G1_PIN, B1_PIN, R2_PIN, G2_PIN, B2_PIN, A_PIN, B_PIN, C_PIN, D_PIN, E_PIN, LAT_PIN, OE_PIN, CLK_PIN};
@@ -80,6 +86,32 @@ void initDisplay(){
   dma_display->setTextSize(2);  
   dma_display->setBrightness8(BRIGHTNESS); //0-255
 }
+
+void buttonSetup(){
+  pinMode(BUTTON_INPUT_1, INPUT_PULLUP);
+  pinMode(BUTTON_INPUT_2, INPUT_PULLUP);
+  pinMode(BUTTON_INPUT_3, INPUT_PULLUP);
+  pinMode(BUTTON_INPUT_4, INPUT_PULLUP);
+
+  while(digitalRead(BUTTON_INPUT_1)){
+    drawXbm565(0,0,32,64, SwitchDisconnectedRed, dma_display->color565(255,0,0));
+    drawXbm565(0,0,32,64, SwitchDisconnectedGrey, dma_display->color565(128,128,128));
+    drawXbm565(0,0,32,64, SwitchDisconnectedWhite, dma_display->color565(128,128,128));
+    dma_display->setTextColor(dma_display->color444(255, 0, 0));
+    dma_display->setTextSize(1);
+    dma_display->setCursor(13,12);
+    dma_display->println("1");
+    delay(100);
+  }
+
+  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_1), ButtonInterruptFunction1, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_2), ButtonInterruptFunction2, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_3), ButtonInterruptFunction3, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_4), ButtonInterruptFunction4, CHANGE);
+}
+
+
+
 
 void IRAM_ATTR timerISR() {
   if(!((counterHigh == counterHighOld) && (counterLow == counterLowOld) && ((delayHigh == delayHighOld) || delayHigh > 32) && ((delayLow == delayLowOld) || delayLow > 32)))
@@ -175,8 +207,8 @@ void updateDelayBarsDisplay(){
 void setup() {
   Serial.begin(115200);
   initDisplay();
-  timerISRInit();
   buttonSetup();
+  timerISRInit();
 }
 
 void loop() {
