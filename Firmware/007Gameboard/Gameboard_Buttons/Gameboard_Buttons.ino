@@ -93,17 +93,29 @@ void buttonSetup(){
   pinMode(BUTTON_INPUT_3, INPUT_PULLUP);
   pinMode(BUTTON_INPUT_4, INPUT_PULLUP);
 
-  while(digitalRead(BUTTON_INPUT_1)){
+  while(digitalRead(BUTTON_INPUT_1)|digitalRead(BUTTON_INPUT_2)|digitalRead(BUTTON_INPUT_3)|digitalRead(BUTTON_INPUT_4)){
+    dma_display->setBrightness8(100); //0-255
     drawXbm565(0,0,32,64, SwitchDisconnectedRed, dma_display->color565(255,0,0));
     drawXbm565(0,0,32,64, SwitchDisconnectedGrey, dma_display->color565(128,128,128));
     drawXbm565(0,0,32,64, SwitchDisconnectedWhite, dma_display->color565(128,128,128));
     dma_display->setTextColor(dma_display->color444(255, 0, 0));
     dma_display->setTextSize(1);
     dma_display->setCursor(13,12);
-    dma_display->println("1");
+    if(digitalRead(BUTTON_INPUT_1)){
+      dma_display->println("1");
+    }
+    else if(digitalRead(BUTTON_INPUT_2)){
+      dma_display->println("2");
+    }
+    else if(digitalRead(BUTTON_INPUT_3)){
+      dma_display->println("3");
+    }
+    else if(digitalRead(BUTTON_INPUT_4)){
+      dma_display->println("4");
+    }
     delay(100);
   }
-
+  dma_display->setBrightness8(BRIGHTNESS); //0-255
   attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_1), ButtonInterruptFunction1, CHANGE);
   attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_2), ButtonInterruptFunction2, CHANGE);
   attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_3), ButtonInterruptFunction3, CHANGE);
