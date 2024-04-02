@@ -208,8 +208,9 @@ void loop() {
     showUpdateDisplay(a.acceleration.x / 8, a.acceleration.y / 8, a.acceleration.z / 8, tilt_averaged);
   }
   
-
-  Serial.print("X: ");
+  Serial.print("Brightness: ");
+  Serial.print(analogRead(ALS_PIN));
+  Serial.print(", X: ");
   Serial.print(a.acceleration.x/8);
   Serial.print(", Y: ");
   Serial.print(a.acceleration.y/8);
@@ -224,4 +225,5 @@ void loop() {
     Serial.println("L");
   }
 
+  dma_display->setBrightness(map(analogRead(ALS_PIN), 0, 4095, BRIGHTNESS,0));
 }
