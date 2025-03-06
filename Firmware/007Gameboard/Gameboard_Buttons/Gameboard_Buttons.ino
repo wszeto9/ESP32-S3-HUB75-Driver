@@ -30,32 +30,116 @@ unsigned long lastButtonPressLowTime;
 uint8_t lastButtonHigh;
 uint8_t lastButtonLow;
 
+#define BlueSide
+
+//yellow
+#ifdef YellowWSide
+#define colorDark 0x72a0
+#define colorLight 0xfde0
+#endif
+
+//green
+#ifdef GreenSide
+#define colorLight 0x25a0
+#define colorDark 0x1340
+#endif
+
+#ifdef RedSide
+#define colorLight 0xF800
+#define colorDark 0x7000
+#endif
+
+#ifdef BlueSide
+#define colorLight 0x001F
+#define colorDark 0x0010
+#endif
+
 void handleButtonInterrupts(uint8_t buttonNumber){
-  if(buttonNumber > 2 && lastButtonHigh != buttonNumber && (lastButtonPressHighTime + 500) < millis()){
-    counterHigh ++;
-    lastButtonPressHighTime = millis();
-    delayHigh = 0;
-    lastButtonHigh = buttonNumber;
+  if(buttonNumber > 2){
+    if(lastButtonHigh == buttonNumber){
+      lastButtonPressHighTime = millis();
+      delayHigh = 0;
+    }
+    if(lastButtonHigh != buttonNumber && (lastButtonPressHighTime + 500) < millis()){
+      counterHigh ++;
+      lastButtonHigh = buttonNumber;
+      lastButtonPressHighTime = millis();
+      delayHigh = 0;
+    }
   }
-  else if(buttonNumber < 3 && lastButtonLow != buttonNumber && (lastButtonPressLowTime + 500) < millis()){
-    counterLow ++;
-    lastButtonPressLowTime = millis();
-    delayLow = 0;
-    lastButtonLow = buttonNumber;
+  if(buttonNumber < 3){
+    if(lastButtonLow == buttonNumber){
+      lastButtonPressLowTime = millis();
+      delayLow = 0;
+    }
+    if(lastButtonLow != buttonNumber && (lastButtonPressLowTime + 500) < millis()){
+      counterLow ++;
+      lastButtonLow = buttonNumber;
+      lastButtonPressLowTime = millis();
+      delayLow = 0;
+    }
   }
 }
 
 void IRAM_ATTR ButtonInterruptFunction1(){
-  handleButtonInterrupts(1);
+  if(digitalRead(BUTTON_INPUT_1)){
+    if(lastButtonLow == 1){
+        lastButtonPressLowTime = millis();
+        delayLow = 0;
+      }
+    if(lastButtonLow != 1 && (lastButtonPressLowTime + 500) < millis()){
+      counterLow ++;
+      lastButtonLow = 1;
+      lastButtonPressLowTime = millis();
+      delayLow = 0;
+    } 
+  }
+  //handleButtonInterrupts(1);
 }
 void IRAM_ATTR ButtonInterruptFunction2(){
-  handleButtonInterrupts(2);
+  if(digitalRead(BUTTON_INPUT_2)){
+    if(lastButtonLow == 2){
+        lastButtonPressLowTime = millis();
+        delayLow = 0;
+      }
+    if(lastButtonLow != 2 && (lastButtonPressLowTime + 500) < millis()){
+      counterLow ++;
+      lastButtonLow = 2;
+      lastButtonPressLowTime = millis();
+      delayLow = 0;
+    }
+  }
+  //handleButtonInterrupts(2);
 }
 void IRAM_ATTR ButtonInterruptFunction3(){
-  handleButtonInterrupts(3);
+  if(digitalRead(BUTTON_INPUT_3)){
+    if(lastButtonHigh == 3){
+      lastButtonPressHighTime = millis();
+      delayHigh = 0;
+    }
+    if(lastButtonHigh != 3 && (lastButtonPressHighTime + 500) < millis()){
+      counterHigh ++;
+      lastButtonHigh = 3;
+      lastButtonPressHighTime = millis();
+      delayHigh = 0;
+    }
+  }
+  //handleButtonInterrupts(3);
 }
 void IRAM_ATTR ButtonInterruptFunction4(){
-  handleButtonInterrupts(4);
+  if(digitalRead(BUTTON_INPUT_4)){
+    if(lastButtonHigh == 4){
+      lastButtonPressHighTime = millis();
+      delayHigh = 0;
+    }
+    if(lastButtonHigh != 4 && (lastButtonPressHighTime + 500) < millis()){
+      counterHigh ++;
+      lastButtonHigh = 4;
+      lastButtonPressHighTime = millis();
+      delayHigh = 0;
+    }
+  }
+  //handleButtonInterrupts(4);
 }
 
 void drawXbm565(int x, int y, int width, int height, const char *xbm, uint16_t color = 0xffff) 
@@ -116,14 +200,11 @@ void buttonSetup(){
     delay(100);
   }
   dma_display->setBrightness8(BRIGHTNESS); //0-255
-  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_1), ButtonInterruptFunction1, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_2), ButtonInterruptFunction2, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_3), ButtonInterruptFunction3, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_4), ButtonInterruptFunction4, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_1), ButtonInterruptFunction1, RISING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_2), ButtonInterruptFunction2, RISING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_3), ButtonInterruptFunction3, RISING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_4), ButtonInterruptFunction4, RISING);
 }
-
-
-
 
 void IRAM_ATTR timerISR() {
   if(!((counterHigh == counterHighOld) && (counterLow == counterLowOld) && ((delayHigh == delayHighOld) || delayHigh > 32) && ((delayLow == delayLowOld) || delayLow > 32)))
@@ -156,6 +237,13 @@ void updatePointsDisplay(){
     int hundreds = (counterHigh - (counterHigh % 100))/100;
     int tens = ((counterHigh - hundreds * 100) - (counterHigh % 10))/10;
     int ones = counterHigh % 10;
+    // Serial.print("High Hundreds: ");
+    // Serial.print(hundreds);
+    // Serial.print(", tens: ");
+    // Serial.print(tens);
+    // Serial.print(", ones: ");
+    // Serial.println(ones);
+    dma_display->setTextColor(0xFFFF, 0x0);
     dma_display->setCursor(0, 13);
     dma_display->print(hundreds);
     dma_display->setCursor(11, 13);
@@ -175,8 +263,15 @@ void updatePointsDisplay(){
     counterLowDisplay = counterLow / 2;
     if(counterLowDisplay >= 100){
       int hundreds = (counterLowDisplay - (counterLowDisplay % 100))/100;
-      int tens = ((counterLowDisplay - hundreds * 100) - (counterHigh % 10))/10;
       int ones = counterLowDisplay % 10;
+      int tens = ((counterLowDisplay - (hundreds * 100)) - ones)/10;
+      
+      // Serial.print("Low Hundreds: ");
+      // Serial.print(hundreds);
+      // Serial.print(", tens: ");
+      // Serial.print(tens);
+      // Serial.print(", ones: ");
+      // Serial.println(ones);
       dma_display->setCursor(0, 37);
       dma_display->print(hundreds);
       dma_display->setCursor(11, 37);
@@ -202,17 +297,17 @@ void updatePointsDisplay(){
 
 void updateDelayBarsDisplay(){
   if(delayHigh >= 32){
-    dma_display->writeFillRect(0, 0, 32, 5, dma_display->color444(0,15,0));
+    dma_display->writeFillRect(0, 0, 32, 5, colorLight);
   }
-  else{
-    dma_display->writeFillRect(0, 0, delayHigh, 5, 0xFF);
+  else if(delayHigh > 0){
+    dma_display->writeFillRect(0, 0, delayHigh, 5, colorDark);
   }
 
   if(delayLow >= 32){
-    dma_display->writeFillRect(0, 59, 32, 5, dma_display->color444(0,15,0));
+    dma_display->writeFillRect(0, 59, 32, 5, colorLight);
   }
-  else{
-    dma_display->writeFillRect(0, 59, delayLow, 5, 0xFF);
+  else if(delayLow > 0){
+    dma_display->writeFillRect(0, 59, delayLow, 5, colorDark);
   }
 }
 

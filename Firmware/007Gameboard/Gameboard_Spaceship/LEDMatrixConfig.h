@@ -47,6 +47,9 @@
 #define BUTTON_INPUT_3 44
 #define BUTTON_INPUT_4 42
 
+#define flashlightLeft 15
+#define flashlightRight 16
+
 #endif
 
 #define PANEL_RES_X 64      // Number of pixels wide of each INDIVIDUAL panel module. 
