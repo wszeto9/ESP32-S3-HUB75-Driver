@@ -7,6 +7,7 @@ The device has 4 button inputs that robots can interact with. These buttons must
 One of the major changes in this firmware compared to most other code one might encounter is that everything is implemented in timer and interrupt peripherals. This means that the flow of the code is quite different from what most people learn when they first start writing code. [Here's a link](https://users.ece.utexas.edu/~valvano/Volume1/E-Book/C12_Interrupts.htm) to learn about interrupts.
 
 ![](./Documentation/GameboardButtonsFlowchart.jpg)
+
 Flowchart for the firmware
 
 The central flow diagram is what is typically taught in code structure. Here, initialization and setup code (usually in `void setup(){}`) is run once and code that repeats is run in a loop (usually in `void loop(){}`). What is special is the two other flow structures on the left and right. They get initialized in setup. For the button interrupt, it's initialized as a pin-change interrupt. This means that if the state of the pin changes, a function is called instantaneously without requiring constant polling. It's initialized in this line:

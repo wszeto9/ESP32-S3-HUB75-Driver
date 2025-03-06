@@ -4,6 +4,7 @@ This firmware is for the lever displays on the 2.007 Spring 2025 gameboard. The 
 One of the major changes in this firmware compared to most other code one might encounter is that everything is implemented in timer and interrupt peripherals. This means that the flow of the code is quite different from what most people learn when they first start writing code. [Here's a link](https://users.ece.utexas.edu/~valvano/Volume1/E-Book/C12_Interrupts.htm) to learn about interrupts.
 
 ![](./Documentation/GameboardLevers.jpg)
+
 Suggested flowchart for the firmware
 
 The central flow diagram is what is typically taught in code structure. Here, initialization and setup code (usually in `void setup(){}`) is run once and code that repeats is run in a loop (usually in `void loop(){}`). What is special is the two other flow structures on the left and right. They get initialized in setup. 
