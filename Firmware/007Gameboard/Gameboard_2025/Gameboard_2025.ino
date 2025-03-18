@@ -226,10 +226,9 @@ void IRAM_ATTR timerISR() {
 }
 
 void timerISRInit(){
-  timer = timerBegin(0, 80, true); // Timer 0, divider 80
-  timerAttachInterrupt(timer, &timerISR, true); // Attach ISR
-  timerAlarmWrite(timer, 15625, true); // updates 32 times in a 500ms period
-  timerAlarmEnable(timer); // Enable the timer
+  timer = timerBegin(60000); // 60 kHz timer
+  timerAttachInterrupt(timer, &timerISR); // Attach ISR
+  timerAlarm(timer, 1000, true, 0); //calls interrupt every 60kHz/1000 = 60 Hz
 }
 
 void updatePointsDisplay(){
