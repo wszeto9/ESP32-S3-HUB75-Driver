@@ -67,6 +67,7 @@ void handleButtonInterrupts(uint8_t buttonNumber){
       delayHigh = 0;
     }
   }
+
   if(buttonNumber < 3){
     if(lastButtonLow == buttonNumber){
       lastButtonPressLowTime = millis();
@@ -167,7 +168,7 @@ void initDisplay(){
   dma_display->setRotation(displayRotation);
   dma_display->setTextWrap(false);
   dma_display->begin();
-  dma_display->setTextSize(2);  
+  dma_display->setTextSize(6);  
   dma_display->setBrightness8(BRIGHTNESS); //0-255
 }
 
@@ -179,26 +180,28 @@ void buttonSetup(){
 
   while(digitalRead(BUTTON_INPUT_1)|digitalRead(BUTTON_INPUT_2)|digitalRead(BUTTON_INPUT_3)|digitalRead(BUTTON_INPUT_4)){
     dma_display->setBrightness8(100); //0-255
-    drawXbm565(0,0,32,64, SwitchDisconnectedRed, dma_display->color565(255,0,0));
-    drawXbm565(0,0,32,64, SwitchDisconnectedGrey, dma_display->color565(128,128,128));
-    drawXbm565(0,0,32,64, SwitchDisconnectedWhite, dma_display->color565(128,128,128));
+    drawXbm565(0,0,32,32, SwitchDisconnectedRed, dma_display->color565(255,0,0));
+    drawXbm565(0,0,32,32, SwitchDisconnectedGrey, dma_display->color565(128,128,128));
+    drawXbm565(0,0,32,32, SwitchDisconnectedWhite, dma_display->color565(128,128,128));
     dma_display->setTextColor(dma_display->color444(255, 0, 0));
     dma_display->setTextSize(1);
     dma_display->setCursor(13,12);
-    if(digitalRead(BUTTON_INPUT_1)){
+
+    if(!digitalRead(BUTTON_INPUT_1)){
       dma_display->println("1");
     }
-    else if(digitalRead(BUTTON_INPUT_2)){
+    else if(!digitalRead(BUTTON_INPUT_2)){
       dma_display->println("2");
     }
-    else if(digitalRead(BUTTON_INPUT_3)){
+    else if(!digitalRead(BUTTON_INPUT_3)){
       dma_display->println("3");
     }
-    else if(digitalRead(BUTTON_INPUT_4)){
+    else if(!digitalRead(BUTTON_INPUT_4)){
       dma_display->println("4");
     }
     delay(100);
   }
+
   dma_display->setBrightness8(BRIGHTNESS); //0-255
   attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_1), ButtonInterruptFunction1, RISING);
   attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_2), ButtonInterruptFunction2, RISING);
@@ -322,5 +325,9 @@ void loop() {
   Serial.print(counterHigh);
   Serial.print(", Counter Low: ");
   Serial.println(counterLow);
-  delay(100);
+
+  // ButtonInterruptFunction1(); 
+  // updateDelayBarsDisplay(); 
+  // updatePointsDisplay();
+  delay(200);
 }

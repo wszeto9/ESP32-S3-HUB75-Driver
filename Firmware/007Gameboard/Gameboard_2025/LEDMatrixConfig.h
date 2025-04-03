@@ -42,18 +42,25 @@
 #define ALS_PIN 1
 #define TOP_BUTTON 10
 #define BOTTOM_BUTTON 11
-#define BUTTON_INPUT_1 2
-#define BUTTON_INPUT_2 43
-#define BUTTON_INPUT_3 44
-#define BUTTON_INPUT_4 42
+#define BUTTON_INPUT_1 1
+#define BUTTON_INPUT_2 2
+#define BUTTON_INPUT_3 5
+#define BUTTON_INPUT_4 4
+
+#define BUTTON_PIN_1 1  // MCP23XXX pin button is attached to
+#define BUTTON_PIN_2 2  // MCP23XXX pin button is attached to
+#define BUTTON_PIN_3 3  // MCP23XXX pin button is attached to
+#define BUTTON_PIN_4 4  // MCP23XXX pin button is attached to
+#define BUTTON_PIN_5 5  // MCP23XXX pin button is attached to
+#define BUTTON_PIN_6 6  // MCP23XXX pin button is attached to
 
 #endif
 
-#define PANEL_RES_X 64      // Number of pixels wide of each INDIVIDUAL panel module. 
-#define PANEL_RES_Y 32     // Number of pixels tall of each INDIVIDUAL panel module.
+#define PANEL_RES_X 32      // Number of pixels wide of each INDIVIDUAL panel module. 
+#define PANEL_RES_Y 32      // Number of pixels tall of each INDIVIDUAL panel module.
 #define PANEL_CHAIN 1      // Total number of panels chained one to another
 
 #define BRIGHTNESS 255
-#define displayRotation 3
+#define displayRotation 2
 
 #endif
