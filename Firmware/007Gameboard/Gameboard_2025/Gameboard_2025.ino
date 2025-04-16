@@ -7,6 +7,8 @@
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
 #include "LEDMatrixConfig.h"
 #include "ImageAssets.h"
+#include <Adafruit_MCP23X17.h>
+Adafruit_MCP23X17 mcp;
 
 MatrixPanel_I2S_DMA *dma_display = nullptr;
 
@@ -173,12 +175,27 @@ void initDisplay(){
 }
 
 void buttonSetup(){
-  pinMode(BUTTON_INPUT_1, INPUT_PULLUP);
+  /*pinMode(BUTTON_INPUT_1, INPUT_PULLUP);
   pinMode(BUTTON_INPUT_2, INPUT_PULLUP);
   pinMode(BUTTON_INPUT_3, INPUT_PULLUP);
-  pinMode(BUTTON_INPUT_4, INPUT_PULLUP);
+  pinMode(BUTTON_INPUT_4, INPUT_PULLUP);*/ 
 
-  while(digitalRead(BUTTON_INPUT_1)|digitalRead(BUTTON_INPUT_2)|digitalRead(BUTTON_INPUT_3)|digitalRead(BUTTON_INPUT_4)){
+  if (!mcp.begin_I2C()) {
+  //if (!mcp.begin_SPI(CS_PIN)) {
+    Serial.println("Error.");
+    while (1);
+  }
+
+
+  // configure pin for input with pull up
+  mcp.pinMode(BUTTON_PIN_1, INPUT_PULLUP);
+  mcp.pinMode(BUTTON_PIN_2, INPUT_PULLUP);
+  mcp.pinMode(BUTTON_PIN_3, INPUT_PULLUP);
+  mcp.pinMode(BUTTON_PIN_4, INPUT_PULLUP);
+  mcp.pinMode(BUTTON_PIN_5, INPUT_PULLUP);
+  mcp.pinMode(BUTTON_PIN_6, INPUT_PULLUP);
+
+  while(mcp.digitalRead(BUTTON_INPUT_1)|mcp.digitalRead(BUTTON_INPUT_2)|mcp.digitalRead(BUTTON_INPUT_3)|mcp.digitalRead(BUTTON_INPUT_4)){
     dma_display->setBrightness8(100); //0-255
     drawXbm565(0,0,32,32, SwitchDisconnectedRed, dma_display->color565(255,0,0));
     drawXbm565(0,0,32,32, SwitchDisconnectedGrey, dma_display->color565(128,128,128));
@@ -187,16 +204,16 @@ void buttonSetup(){
     dma_display->setTextSize(1);
     dma_display->setCursor(13,12);
 
-    if(!digitalRead(BUTTON_INPUT_1)){
+    if(!mcp.digitalRead(BUTTON_INPUT_1)){
       dma_display->println("1");
     }
-    else if(!digitalRead(BUTTON_INPUT_2)){
+    else if(!mcp.digitalRead(BUTTON_INPUT_2)){
       dma_display->println("2");
     }
-    else if(!digitalRead(BUTTON_INPUT_3)){
+    else if(!mcp.digitalRead(BUTTON_INPUT_3)){
       dma_display->println("3");
     }
-    else if(!digitalRead(BUTTON_INPUT_4)){
+    else if(!mcp.digitalRead(BUTTON_INPUT_4)){
       dma_display->println("4");
     }
     delay(100);
@@ -315,6 +332,7 @@ void updateDelayBarsDisplay(){
 
 void setup() {
   Serial.begin(115200);
+  
   initDisplay();
   buttonSetup();
   timerISRInit();
