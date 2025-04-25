@@ -14,23 +14,31 @@ MatrixPanel_I2S_DMA *dma_display = nullptr;
 
 int counterHigh = 0;
 int counterLow = 0;
+int counterThree = 0; 
 int counterLowDisplay = 0;
+int points = -3; 
+int oldPoints = -3; 
 
 int counterHighOld;
 int counterLowOld;
+int counterThreeOld; 
 
 unsigned long delayHigh = 0;
 unsigned long delayLow = 0;
+unsigned long delayThree = 0; 
 unsigned long delayHighOld = 0;
 unsigned long delayLowOld = 0;
+unsigned long delayThreeOld = 0; 
 
 hw_timer_t * timer = NULL;
 
 unsigned long lastButtonPressHighTime;
 unsigned long lastButtonPressLowTime;
+unsigned long lastButtonPressThreeTime; 
 
 uint8_t lastButtonHigh;
 uint8_t lastButtonLow;
+uint8_t lastButtonThree; 
 
 #define BlueSide
 
@@ -85,12 +93,12 @@ void handleButtonInterrupts(uint8_t buttonNumber){
 }
 
 void IRAM_ATTR ButtonInterruptFunction1(){
-  if(digitalRead(BUTTON_INPUT_1)){
+  if(mcp.digitalRead(BUTTON_INPUT_1)){
     if(lastButtonLow == 1){
         lastButtonPressLowTime = millis();
         delayLow = 0;
       }
-    if(lastButtonLow != 1 && (lastButtonPressLowTime + 500) < millis()){
+    if(lastButtonLow != 1 && (abs(lastButtonPressLowTime - millis()) > 1000)){
       counterLow ++;
       lastButtonLow = 1;
       lastButtonPressLowTime = millis();
@@ -100,12 +108,12 @@ void IRAM_ATTR ButtonInterruptFunction1(){
   //handleButtonInterrupts(1);
 }
 void IRAM_ATTR ButtonInterruptFunction2(){
-  if(digitalRead(BUTTON_INPUT_2)){
+  if(mcp.digitalRead(BUTTON_INPUT_2)){
     if(lastButtonLow == 2){
         lastButtonPressLowTime = millis();
         delayLow = 0;
       }
-    if(lastButtonLow != 2 && (lastButtonPressLowTime + 500) < millis()){
+    if(lastButtonLow != 2 && (abs(lastButtonPressLowTime - millis()) > 1000)){
       counterLow ++;
       lastButtonLow = 2;
       lastButtonPressLowTime = millis();
@@ -115,12 +123,14 @@ void IRAM_ATTR ButtonInterruptFunction2(){
   //handleButtonInterrupts(2);
 }
 void IRAM_ATTR ButtonInterruptFunction3(){
-  if(digitalRead(BUTTON_INPUT_3)){
+  //Serial.println("Button 3"); 
+ //Serial.println(mcp.digitalRead(BUTTON_INPUT_3)); 
+  if(mcp.digitalRead(BUTTON_INPUT_3)){
     if(lastButtonHigh == 3){
       lastButtonPressHighTime = millis();
       delayHigh = 0;
     }
-    if(lastButtonHigh != 3 && (lastButtonPressHighTime + 500) < millis()){
+    if(lastButtonHigh != 3 && && (abs(lastButtonPressHighTime - millis()) > 1000)){
       counterHigh ++;
       lastButtonHigh = 3;
       lastButtonPressHighTime = millis();
@@ -130,16 +140,54 @@ void IRAM_ATTR ButtonInterruptFunction3(){
   //handleButtonInterrupts(3);
 }
 void IRAM_ATTR ButtonInterruptFunction4(){
-  if(digitalRead(BUTTON_INPUT_4)){
+  //Serial.println("Button 4"); 
+  //Serial.println(mcp.digitalRead(BUTTON_INPUT_4)); 
+  if(mcp.digitalRead(BUTTON_INPUT_4)){
     if(lastButtonHigh == 4){
       lastButtonPressHighTime = millis();
       delayHigh = 0;
     }
-    if(lastButtonHigh != 4 && (lastButtonPressHighTime + 500) < millis()){
+    if(lastButtonHigh != 4 && (abs(lastButtonPressHighTime - millis()) > 1000)){
       counterHigh ++;
       lastButtonHigh = 4;
       lastButtonPressHighTime = millis();
       delayHigh = 0;
+    }
+  }
+  //handleButtonInterrupts(4);
+}
+
+void IRAM_ATTR ButtonInterruptFunction5(){
+  //Serial.println("Button 4"); 
+  //Serial.println(mcp.digitalRead(BUTTON_INPUT_4)); 
+  if(mcp.digitalRead(BUTTON_INPUT_5)){
+    if(lastButtonThree == 5){
+      lastButtonPressThreeTime = millis();
+      delayThree = 0;
+    }
+    if(lastButtonThree != 5 && (abs(lastButtonPressThreeTime - millis()) > 1000)){
+      counterThree ++;
+      lastButtonThree = 5;
+      lastButtonPressThreeTime = millis();
+      delayThree = 0;
+    }
+  }
+  //handleButtonInterrupts(4);
+}
+
+void IRAM_ATTR ButtonInterruptFunction6(){
+  //Serial.println("Button 4"); 
+  //Serial.println(mcp.digitalRead(BUTTON_INPUT_4)); 
+  if(mcp.digitalRead(BUTTON_INPUT_6)){
+    if(lastButtonThree == 6){
+      lastButtonPressThreeTime = millis();
+      delayThree = 0;
+    }
+    if(lastButtonThree != 6 && (abs(lastButtonPressThreeTime - millis()) > 1000)){
+      counterThree ++;
+      lastButtonThree = 6;
+      lastButtonPressThreeTime = millis();
+      delayThree = 0;
     }
   }
   //handleButtonInterrupts(4);
@@ -186,36 +234,75 @@ void buttonSetup(){
     while (1);
   }
 
-
   // configure pin for input with pull up
-  mcp.pinMode(BUTTON_PIN_1, INPUT_PULLUP);
-  mcp.pinMode(BUTTON_PIN_2, INPUT_PULLUP);
-  mcp.pinMode(BUTTON_PIN_3, INPUT_PULLUP);
-  mcp.pinMode(BUTTON_PIN_4, INPUT_PULLUP);
-  mcp.pinMode(BUTTON_PIN_5, INPUT_PULLUP);
-  mcp.pinMode(BUTTON_PIN_6, INPUT_PULLUP);
+  mcp.pinMode(BUTTON_INPUT_1, INPUT_PULLUP);
+  mcp.pinMode(BUTTON_INPUT_2, INPUT_PULLUP);
+  mcp.pinMode(BUTTON_INPUT_3, INPUT_PULLUP);
+  mcp.pinMode(BUTTON_INPUT_4, INPUT_PULLUP);
+  mcp.pinMode(BUTTON_INPUT_5, INPUT_PULLUP);
+  mcp.pinMode(BUTTON_INPUT_6, INPUT_PULLUP);
 
-  while(mcp.digitalRead(BUTTON_INPUT_1)|mcp.digitalRead(BUTTON_INPUT_2)|mcp.digitalRead(BUTTON_INPUT_3)|mcp.digitalRead(BUTTON_INPUT_4)){
-    dma_display->setBrightness8(100); //0-255
-    drawXbm565(0,0,32,32, SwitchDisconnectedRed, dma_display->color565(255,0,0));
-    drawXbm565(0,0,32,32, SwitchDisconnectedGrey, dma_display->color565(128,128,128));
-    drawXbm565(0,0,32,32, SwitchDisconnectedWhite, dma_display->color565(128,128,128));
-    dma_display->setTextColor(dma_display->color444(255, 0, 0));
-    dma_display->setTextSize(1);
-    dma_display->setCursor(13,12);
+  int b1 = mcp.digitalRead(BUTTON_INPUT_1); 
+  int b2 = mcp.digitalRead(BUTTON_INPUT_2); 
+  int b3 = mcp.digitalRead(BUTTON_INPUT_3); 
+  int b4 = mcp.digitalRead(BUTTON_INPUT_4); 
+  int b5 = mcp.digitalRead(BUTTON_INPUT_5); 
+  int b6 = mcp.digitalRead(BUTTON_INPUT_6); 
 
-    if(!mcp.digitalRead(BUTTON_INPUT_1)){
-      dma_display->println("1");
+
+  while(b1|b2|b3|b4|b5|b6){
+
+    int even = 0; 
+    int odd = 0; 
+    int sum = 0; 
+
+    if(b1){
+      sum++; 
+      odd = 1; 
     }
-    else if(!mcp.digitalRead(BUTTON_INPUT_2)){
-      dma_display->println("2");
+    if(b2){
+      sum++;
+      even = 1; 
     }
-    else if(!mcp.digitalRead(BUTTON_INPUT_3)){
-      dma_display->println("3");
+    if(b3){
+      sum++; 
+      odd = 1; 
     }
-    else if(!mcp.digitalRead(BUTTON_INPUT_4)){
-      dma_display->println("4");
+    if(b4){
+      sum++;
+      even = 1; 
     }
+    if(b5){
+      sum++; 
+      odd = 1; 
+    }
+    if(b6){
+      sum++;
+      even = 1; 
+    }
+    
+    Serial.println(sum);
+    if(sum != 3){
+      dma_display->setBrightness8(100); //0-255
+      drawXbm565(16,0,32,32, SwitchDisconnectedRed, dma_display->color565(255,0,0));
+      drawXbm565(16,0,32,32, SwitchDisconnectedGrey, dma_display->color565(128,128,128));
+      drawXbm565(16,0,32,32, SwitchDisconnectedWhite, dma_display->color565(128,128,128));
+      dma_display->setTextColor(dma_display->color444(255, 0, 0));
+      dma_display->setTextSize(1);
+      dma_display->setCursor(27,9);
+
+      if(even){
+        dma_display->println("0");
+      }
+      else if(odd){
+        dma_display->println("1");
+      }
+
+    } else {
+      break;
+    }
+
+    
     delay(100);
   }
 
@@ -224,6 +311,9 @@ void buttonSetup(){
   attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_2), ButtonInterruptFunction2, RISING);
   attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_3), ButtonInterruptFunction3, RISING);
   attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_4), ButtonInterruptFunction4, RISING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_5), ButtonInterruptFunction5, RISING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_INPUT_6), ButtonInterruptFunction6, RISING);
+
 }
 
 void IRAM_ATTR timerISR() {
@@ -232,15 +322,26 @@ void IRAM_ATTR timerISR() {
     dma_display->clearScreen();
     dma_display->setTextSize(2);
     updatePointsDisplay();
-    updateDelayBarsDisplay();
+    //updateDelayBarsDisplay();
+
+    //horizontal bars 
+    dma_display->writeFillRect(0, 0, 64, 5, colorLight);
+    dma_display->writeFillRect(0, 27, 64, 5, colorLight);
+
+    //vertical bars 
+    dma_display->writeFillRect(0, 0, 5, 32, colorLight);
+    dma_display->writeFillRect(59, 0, 5, 32, colorLight);
 
     counterHighOld = counterHigh;
     counterLowOld = counterLow;
+    counterThreeOld = counterThree; 
     delayHighOld = delayHigh;
     delayLowOld = delayLow;
+    delayThreeOld = delayThree; 
   }
   delayHigh++;
   delayLow++;
+  delayThree++;
 
 
 }
@@ -252,10 +353,18 @@ void timerISRInit(){
 }
 
 void updatePointsDisplay(){
-  if(counterHigh >= 100){
-    int hundreds = (counterHigh - (counterHigh % 100))/100;
-    int tens = ((counterHigh - hundreds * 100) - (counterHigh % 10))/10;
-    int ones = counterHigh % 10;
+  //horizontal bars 
+  dma_display->writeFillRect(0, 0, 64, 5, colorLight);
+  dma_display->writeFillRect(0, 27, 64, 5, colorLight);
+
+  //vertical bars 
+  dma_display->writeFillRect(0, 0, 5, 32, colorLight);
+  dma_display->writeFillRect(59, 0, 5, 32, colorLight);
+
+  if(points >= 100){
+    int hundreds = (points - (points % 100))/100;
+    int tens = ((points - hundreds * 100) - (points % 10))/10;
+    int ones = points % 10;
     // Serial.print("High Hundreds: ");
     // Serial.print(hundreds);
     // Serial.print(", tens: ");
@@ -263,22 +372,22 @@ void updatePointsDisplay(){
     // Serial.print(", ones: ");
     // Serial.println(ones);
     dma_display->setTextColor(0xFFFF, 0x0);
-    dma_display->setCursor(0, 13);
+    dma_display->setCursor(15, 9);
     dma_display->print(hundreds);
-    dma_display->setCursor(11, 13);
+    dma_display->setCursor(27, 9);
     dma_display->print(tens);
-    dma_display->setCursor(22, 13);
+    dma_display->setCursor(39, 9);
     dma_display->print(ones);
     }
-    else if(counterHigh >= 10){
-      dma_display->setCursor(5, 13);
-      dma_display->println(counterHigh);
+    else if(points >= 10){
+      dma_display->setCursor(21, 9);
+      dma_display->println(points);
     }
     else{
-      dma_display->setCursor(11, 13);
-      dma_display->println(counterHigh);
+      dma_display->setCursor(27, 9); // x originally 11
+      dma_display->println(points);
     }
-
+/*
     counterLowDisplay = counterLow / 2;
     if(counterLowDisplay >= 100){
       int hundreds = (counterLowDisplay - (counterLowDisplay % 100))/100;
@@ -311,12 +420,13 @@ void updatePointsDisplay(){
       dma_display->setTextSize(1);
       dma_display->print(".5");
       dma_display->setTextSize(2);
-    }
+    }*/
 }
 
 void updateDelayBarsDisplay(){
   if(delayHigh >= 32){
-    dma_display->writeFillRect(0, 0, 32, 5, colorLight);
+    dma_display->writeFillRect(0, 0, 64, 5, colorLight);
+    dma_display->writeFillRect(0, 27, 64, 5, colorLight);
   }
   else if(delayHigh > 0){
     dma_display->writeFillRect(0, 0, delayHigh, 5, colorDark);
@@ -336,16 +446,42 @@ void setup() {
   initDisplay();
   buttonSetup();
   timerISRInit();
+
+  //bars 
+  //dma_display->writeFillRect(0, 0, 64, 5, colorLight);
+  // dma_display->writeFillRect(0, 27, 64, 5, colorLight);
 }
 
 void loop() {
+  /*
   Serial.print("Counter High: ");
   Serial.print(counterHigh);
   Serial.print(", Counter Low: ");
-  Serial.println(counterLow);
+  Serial.print(counterLow);
+  Serial.print(", Counter Three: ");
+  Serial.print(counterThree);
+*/
 
-  // ButtonInterruptFunction1(); 
-  // updateDelayBarsDisplay(); 
-  // updatePointsDisplay();
-  delay(200);
+  points = counterLow+counterHigh+counterThree-3; 
+
+  //Serial.print(", points: ");
+  //Serial.println(points);
+
+  ButtonInterruptFunction1(); 
+  ButtonInterruptFunction2(); 
+  ButtonInterruptFunction3(); 
+  ButtonInterruptFunction4(); 
+  ButtonInterruptFunction5();
+  ButtonInterruptFunction6();
+
+  if(points!=oldPoints){
+    dma_display->clearScreen();
+    // updateDelayBarsDisplay(); 
+    updatePointsDisplay();
+    oldPoints = points; 
+  }
+
+  
+
+  //delay(200);
 }

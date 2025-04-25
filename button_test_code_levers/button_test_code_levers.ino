@@ -5,12 +5,12 @@
 #include <Adafruit_MCP23X08.h>
 #include <Adafruit_MCP23X17.h>
 
-#define BUTTON_PIN_1 0  // MCP23XXX pin button is attached to
-#define BUTTON_PIN_2 1  // MCP23XXX pin button is attached to
-#define BUTTON_PIN_3 2  // MCP23XXX pin button is attached to
-#define BUTTON_PIN_4 3  // MCP23XXX pin button is attached to
-#define BUTTON_PIN_5 4  // MCP23XXX pin button is attached to
-#define BUTTON_PIN_6 5  // MCP23XXX pin button is attached to
+#define BUTTON_PIN_1 1  // MCP23XXX pin button is attached to
+#define BUTTON_PIN_2 2  // MCP23XXX pin button is attached to
+#define BUTTON_PIN_3 3  // MCP23XXX pin button is attached to
+#define BUTTON_PIN_4 4  // MCP23XXX pin button is attached to
+#define BUTTON_PIN_5 5  // MCP23XXX pin button is attached to
+#define BUTTON_PIN_6 6  // MCP23XXX pin button is attached to
 int count = 0; 
 
 Adafruit_MCP23X17 mcp;
@@ -50,22 +50,22 @@ void loop() {
  // Serial.println(mcp.digitalRead(BUTTON_PIN_1)); 
 
   if (b1) {
-    // Serial.println("Button 1 Pressed!");
+    Serial.println("Button 1 Pressed!");
     count += 1; 
   } else if (b2)  {
-    // Serial.println("Button 2 Pressed!");
+    Serial.println("Button 2 Pressed!");
     count += 1; 
-  }else if (b3)  {
-    // Serial.println("Button 3 Pressed!");
+  } else if (b3)  {
+    Serial.println("Button 3 Pressed!");
     count += 1; 
   }else if (b4)  {
-    // Serial.println("Button 4 Pressed!");
+    Serial.println("Button 4 Pressed!");
     count += 1; 
   }else if (b5)  {
-    // Serial.println("Button 5 Pressed!");
+    Serial.println("Button 5 Pressed!");
     count += 1; 
   }else if (b6)  {
-    // Serial.println("Button 6 Pressed!");
+    Serial.println("Button 6 Pressed!");
     count +=1 ; 
   } 
     

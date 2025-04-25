@@ -1,6 +1,7 @@
 #ifndef LEDMatrixConfig_h
 #define LEDMatrixConfig_h
 
+/*
 #ifdef REV_A02
 
 #define R1_PIN 42
@@ -18,7 +19,7 @@
 #define OE_PIN 13
 #define CLK_PIN 47
 
-#endif
+#endif*/
 
 #ifdef REV_B01
 
@@ -44,23 +45,18 @@
 #define BOTTOM_BUTTON 11
 #define BUTTON_INPUT_1 1
 #define BUTTON_INPUT_2 2
-#define BUTTON_INPUT_3 5
+#define BUTTON_INPUT_3 3
 #define BUTTON_INPUT_4 4
-
-#define BUTTON_PIN_1 1  // MCP23XXX pin button is attached to
-#define BUTTON_PIN_2 2  // MCP23XXX pin button is attached to
-#define BUTTON_PIN_3 3  // MCP23XXX pin button is attached to
-#define BUTTON_PIN_4 4  // MCP23XXX pin button is attached to
-#define BUTTON_PIN_5 5  // MCP23XXX pin button is attached to
-#define BUTTON_PIN_6 6  // MCP23XXX pin button is attached to
+#define BUTTON_INPUT_5 5
+#define BUTTON_INPUT_6 6
 
 #endif
 
 #define PANEL_RES_X 32      // Number of pixels wide of each INDIVIDUAL panel module. 
 #define PANEL_RES_Y 32      // Number of pixels tall of each INDIVIDUAL panel module.
-#define PANEL_CHAIN 1      // Total number of panels chained one to another
+#define PANEL_CHAIN 2      // Total number of panels chained one to another, if 0 nothing happens, if 1 double prints, if 2 only one number 
 
 #define BRIGHTNESS 255
-#define displayRotation 2
+#define displayRotation 2 // 0 is horizontal, 1 is vertical, 2 is horizontal 
 
 #endif
