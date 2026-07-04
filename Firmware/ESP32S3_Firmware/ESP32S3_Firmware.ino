@@ -97,11 +97,10 @@ void refreshScreen(){
   }
 }
 
-void timerISRInit(){
-  timer = timerBegin(0, 80, true); // Timer 0, divider 80
-  timerAttachInterrupt(timer, &timerISR, true); // Attach ISR
-  timerAlarmWrite(timer, 1000000, true); // 1s period
-  timerAlarmEnable(timer); // Enable the timer
+void timerISRInit() {
+  timer = timerBegin(1000000);           // 1 MHz timer tick = 1 us
+  timerAttachInterrupt(timer, &timerISR);
+  timerAlarm(timer, 1000000, true, 0);   // 1s period, autoreload, unlimited reloads
 }
 
 void drawText(String text, uint8_t r, uint8_t g, uint8_t b)
