@@ -113,10 +113,10 @@ void drawText(String text, uint8_t r, uint8_t g, uint8_t b)
 
 void initMatrix(){
 
-  DisplayBuffer[0] = "66 BUS";
-  DisplayBuffer[1] = "Harvard";
-  DisplayBuffer[2] = "@Oxford";
-  DisplayBuffer[3] = "Loading";
+  DisplayBuffer[0] = "66 Harvard";
+  DisplayBuffer[1] = "";
+  DisplayBuffer[2] = "";
+  DisplayBuffer[3] = "";
   DisplayBuffer[4] = "";
   DisplayBuffer[5] = "";
   DisplayBuffer[6] = "";
@@ -152,6 +152,52 @@ void initWifi(){
   httpMBTA.begin(apiEndpointMBTA);
 }
 
+struct MBTAPredictionCandidate {
+  int minutesAway;
+  String displayText;
+};
+
+int getPredictionMinutesAway(String eventTime) {
+  if (eventTime.length() < 16) {
+    return -1;
+  }
+
+  int eventMinutes = eventTime.substring(11, 13).toInt() * 60 + eventTime.substring(14, 16).toInt();
+  int nowMinutes = timeClient.getHours() * 60 + timeClient.getMinutes();
+  int minutesAway = eventMinutes - nowMinutes;
+
+  // Handle predictions after midnight while current time is before midnight.
+  if (minutesAway < -12 * 60) {
+    minutesAway += 24 * 60;
+  }
+
+  // Drop stale predictions from earlier today. Keep buses that are arriving now.
+  if (minutesAway < -1) {
+    return -1;
+  }
+  if (minutesAway < 0) {
+    minutesAway = 0;
+  }
+
+  return minutesAway;
+}
+
+void sortPredictionsByArrival(int *minutesAway, String *displayText, int count) {
+  for (int i = 0; i < count - 1; i++) {
+    for (int j = i + 1; j < count; j++) {
+      if (minutesAway[j] < minutesAway[i]) {
+        int tmpMinutes = minutesAway[i];
+        minutesAway[i] = minutesAway[j];
+        minutesAway[j] = tmpMinutes;
+
+        String tmpText = displayText[i];
+        displayText[i] = displayText[j];
+        displayText[j] = tmpText;
+      }
+    }
+  }
+}
+
 void getUpdateMBTAtimes(){
   int httpResponseCode  = httpMBTA.GET();
   if (httpResponseCode  > 0) {
@@ -177,44 +223,71 @@ void getUpdateMBTAtimes(){
     DisplayBuffer[5] = "";
     DisplayBuffer[6] = "";
 
-    int line = 1;
+    int candidateMinutes[10];
+    String candidateDisplayText[10];
+    int candidateCount = 0;
+
     for (JsonObject prediction : doc["data"].as<JsonArray>()) {
       const char *routeId = prediction["relationships"]["route"]["data"]["id"] | "";
       const char *stopId = prediction["relationships"]["stop"]["data"]["id"] | "";
+      const char *revenue = prediction["attributes"]["revenue"] | "";
+      const char *status = prediction["attributes"]["status"] | "";
+
       if (strcmp(routeId, MBTA_ROUTE_ID) != 0 || strcmp(stopId, MBTA_STOP_ID) != 0) {
         continue;
       }
-
-      String arrivalTime = prediction["attributes"]["arrival_time"] | "";
-      if (arrivalTime.length() == 0 || arrivalTime == "null" || arrivalTime == "None") {
-        arrivalTime = prediction["attributes"]["departure_time"] | "";
+      if (strcmp(revenue, "REVENUE") != 0) {
+        continue;
       }
-      if (arrivalTime.length() < 16) {
+      if (strcmp(status, "CANCELLED") == 0 || strcmp(status, "SKIPPED") == 0) {
         continue;
       }
 
-      int arrivalMinutes = arrivalTime.substring(11, 13).toInt() * 60 + arrivalTime.substring(14, 16).toInt();
-      int nowMinutes = timeClient.getHours() * 60 + timeClient.getMinutes();
-      int minutesAway = arrivalMinutes - nowMinutes;
-      if (minutesAway < -12 * 60) {
-        minutesAway += 24 * 60;
-      } else if (minutesAway < 0) {
-        minutesAway = 0;
+      String eventTime = prediction["attributes"]["arrival_time"] | "";
+      if (eventTime.length() == 0 || eventTime == "null" || eventTime == "None") {
+        eventTime = prediction["attributes"]["departure_time"] | "";
       }
 
-      if (minutesAway == 0) {
-        DisplayBuffer[line] = "Arriving";
-      } else {
-        DisplayBuffer[line] = String(minutesAway) + " min";
+      int minutesAway = getPredictionMinutesAway(eventTime);
+      if (minutesAway < 0) {
+        continue;
       }
+
+      candidateMinutes[candidateCount] = minutesAway;
+      if (minutesAway == 0) {
+        candidateDisplayText[candidateCount] = "ARRIVE";
+      } else {
+        candidateDisplayText[candidateCount] = String(minutesAway) + " min";
+      }
+
+      Serial.print("candidate ");
+      Serial.print(candidateCount);
+      Serial.print(": ");
+      Serial.print(eventTime);
+      Serial.print(" -> ");
+      Serial.print(minutesAway);
+      Serial.println(" min");
+
+      candidateCount++;
+      if (candidateCount >= 10) {
+        break;
+      }
+    }
+
+    sortPredictionsByArrival(candidateMinutes, candidateDisplayText, candidateCount);
+
+    for (int i = 0; i < candidateCount && i < 4; i++) {
+      int line = 1 + i;
+      DisplayBuffer[line] = candidateDisplayText[i];
       LineColorsRed[line] = MBTAColor[0];
       LineColorsGreen[line] = MBTAColor[1];
       LineColorsBlue[line] = MBTAColor[2];
 
-      line++;
-      if (line >= 7) {
-        break;
-      }
+      Serial.print("display ");
+      Serial.print(i);
+      Serial.print(": ");
+      Serial.print(candidateMinutes[i]);
+      Serial.println(" min");
     }
   }
   else {

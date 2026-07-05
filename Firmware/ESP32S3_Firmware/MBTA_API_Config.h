@@ -8,6 +8,6 @@ const char *ssid = "TheySeeMeScrollin";
 // Route 66: Harvard Square - Nubian Station.
 const char *MBTA_ROUTE_ID = "66";
 const char *MBTA_STOP_ID = "2559";
-String apiEndpointMBTA = "https://api-v3.mbta.com/predictions?sort=arrival_time&filter%5Broute%5D=66&filter%5Bstop%5D=2559&page%5Blimit%5D=10";
+String apiEndpointMBTA = "https://api-v3.mbta.com/predictions?filter%5Broute%5D=66&filter%5Bstop%5D=2559&page%5Blimit%5D=10";
 
 #endif
