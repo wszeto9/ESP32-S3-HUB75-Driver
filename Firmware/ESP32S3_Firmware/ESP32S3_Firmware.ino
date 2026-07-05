@@ -1,3 +1,5 @@
+#define REV_B01
+
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
 #include "LEDMatrixConfig.h"
 #include "MBTA_API_Config.h"
@@ -5,10 +7,12 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <NTPClient.h>
+#include <string.h>
 #include "logos.h"
 #include "WifiPassword.h" //defines const char *password = "password here";
 
 #define BRIGHTNESS 60
+
 
 String DisplayBuffer[8];
 uint8_t LineColorsRed[8];
@@ -21,7 +25,7 @@ int MBTAArrivalTimes[100];
 uint8_t MITColor[3] = {255,0,44};
 
 const char *ntpServer = "pool.ntp.org";
-const long gmtOffset_sec = -5 * 60 * 60; // Your GMT offset in seconds
+const long gmtOffset_sec = -4 * 60 * 60; // Your GMT offset in seconds
 const int daylightOffset_sec = 3600; // Daylight offset in seconds (1 hour)
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, ntpServer, gmtOffset_sec, daylightOffset_sec);
@@ -31,8 +35,6 @@ MatrixPanel_I2S_DMA *dma_display = nullptr;
 hw_timer_t * timer = NULL;
 
 HTTPClient httpMBTA;
-HTTPClient httpMIT;
-HTTPClient httpMITMorning;
 
 void drawXbm565(int x, int y, int width, int height, const char *xbm, uint16_t color = 0xffff) 
 {
@@ -57,9 +59,7 @@ void IRAM_ATTR timerISR() {
   drawXbm565(57, 8, 7, 7, MBTA_bits, dma_display->color565(MBTAColor[0],MBTAColor[1],MBTAColor[2]));
   drawXbm565(57, 16, 7, 7, MBTA_bits, dma_display->color565(MBTAColor[0],MBTAColor[1],MBTAColor[2]));
   drawXbm565(57, 24, 7, 7, MBTA_bits, dma_display->color565(MBTAColor[0],MBTAColor[1],MBTAColor[2]));
-  drawXbm565(53, 33, 11, 7, MIT_bits, dma_display->color565(MITColor[0],MITColor[1],MITColor[2]));
-  drawXbm565(40, 0, 6, 7, bus_bits, dma_display->color565(MBTAColor[0],MBTAColor[1],MBTAColor[2]));
-  drawXbm565(30, 0, 7, 7, walk_bits, dma_display->color565(MBTAColor[0],MBTAColor[1],MBTAColor[2]));
+  //drawXbm565(40, 0, 6, 7, bus_bits, dma_display->color565(MBTAColor[0],MBTAColor[1],MBTAColor[2]));
   drawXbm565(0, 56, 7, 7, clock_circle_bits, dma_display->color565(MBTAColor[0],MBTAColor[1],MBTAColor[2]));
   drawXbm565(0, 56, 7, 7, clock_hands_bits, dma_display->color565(MITColor[0],MITColor[1],MITColor[2]));
 
@@ -113,22 +113,26 @@ void drawText(String text, uint8_t r, uint8_t g, uint8_t b)
 
 void initMatrix(){
 
-  DisplayBuffer[0] = "9 min   in:";
-  LineColorsRed[0] = DefaultTextColor[0];
-  LineColorsGreen[0] = DefaultTextColor[1];
-  LineColorsBlue[0] = DefaultTextColor[2];
-  LineColorsRed[5] = DefaultTextColor[0];
-  LineColorsGreen[5] = DefaultTextColor[1];
-  LineColorsBlue[5] = DefaultTextColor[2];
-  LineColorsRed[6] = DefaultTextColor[0];
-  LineColorsGreen[6] = DefaultTextColor[1];
-  LineColorsBlue[6] = DefaultTextColor[2];
+  DisplayBuffer[0] = "66 BUS";
+  DisplayBuffer[1] = "Harvard";
+  DisplayBuffer[2] = "@Oxford";
+  DisplayBuffer[3] = "Loading";
+  DisplayBuffer[4] = "";
+  DisplayBuffer[5] = "";
+  DisplayBuffer[6] = "";
+  DisplayBuffer[7] = "";
+  for (int i = 0; i < 8; i++) {
+    LineColorsRed[i] = DefaultTextColor[0];
+    LineColorsGreen[i] = DefaultTextColor[1];
+    LineColorsBlue[i] = DefaultTextColor[2];
+  }
 
   HUB75_I2S_CFG::i2s_pins _pins={R1_PIN, G1_PIN, B1_PIN, R2_PIN, G2_PIN, B2_PIN, A_PIN, B_PIN, C_PIN, D_PIN, E_PIN, LAT_PIN, OE_PIN, CLK_PIN};
   HUB75_I2S_CFG mxconfig(PANEL_RES_X, PANEL_RES_Y, PANEL_CHAIN, _pins);
-  mxconfig.gpio.e = E_PIN;
+  //mxconfig.gpio.e = E_PIN;
   mxconfig.clkphase = false;
   dma_display = new MatrixPanel_I2S_DMA(mxconfig);
+  dma_display->setRotation(displayRotation);
   dma_display->begin();
   dma_display->setBrightness8(BRIGHTNESS); //0-255
   dma_display->clearScreen();
@@ -146,138 +150,70 @@ void initWifi(){
   drawText("Connected", 0,255,0);
   delay(1000);
   httpMBTA.begin(apiEndpointMBTA);
-  httpMIT.begin(apiEndpointMIT);
-  httpMITMorning.begin(apiEndpointMITMorning);
-}
-
-void getUpdateMITShuttleTimes(){
-  int httpResponseCode = httpMIT.GET();
-  if(httpResponseCode > 0){
-    String payload = httpMIT.getString();
-    Serial.print("MIT Data: ");
-    Serial.println(payload);
-    const size_t capacity2 = JSON_OBJECT_SIZE(10) + 300;
-    DynamicJsonDocument doc(capacity2);
-    DeserializationError error2 = deserializeJson(doc, payload);
-    if(error2){
-      Serial.print(F("deserializeJson() failed: "));
-      Serial.println(error2.f_str());
-      return;
-    }
-
-    JsonObject ETAs = doc["ETAs"];
-    int index = 4;
-    for (JsonPair eta : ETAs) {
-      JsonArray predictions = eta.value().as<JsonArray>();
-      JsonObject prediction = predictions[0];
-      String ArrivalTime = prediction["eta"].as<String>();
-      if(ArrivalTime.substring(0,9) == "less than"){
-        ArrivalTime = "<1 min";
-      }
-      DisplayBuffer[index] = ArrivalTime;
-      Serial.println(ArrivalTime);
-      LineColorsRed[index] = 255;
-      LineColorsBlue[index] = 44;
-      index++;
-    }
-  }
-  if(timeClient.getHours() < 1 && timeClient.getHours() < 18){
-    DisplayBuffer[4] = "No.";
-  }
-  
-}
-
-void getUpdateMITShuttleMorningTimes(){
-  int httpResponseCode = httpMITMorning.GET();
-  if(httpResponseCode > 0){
-    String payload = httpMITMorning.getString();
-    Serial.print("MIT Morning Shuttle Data: ");
-    Serial.println(payload);
-    const size_t capacity2 = JSON_OBJECT_SIZE(10) + 300;
-    DynamicJsonDocument doc(capacity2);
-    DeserializationError error2 = deserializeJson(doc, payload);
-    if(error2){
-      Serial.print(F("deserializeJson() failed: "));
-      Serial.println(error2.f_str());
-      return;
-    }
-    JsonObject predictions = doc["ETAs"]["992"][0];
-    String ArrivalTime = predictions["eta"].as<String>();
-    if(ArrivalTime.substring(0,9) == "less than"){
-      ArrivalTime = "<1 min";
-    }
-    DisplayBuffer[4] = ArrivalTime;
-    LineColorsRed[4] = 255;
-    LineColorsBlue[4] = 44;
-  }
-  if(timeClient.getHours() < 8 || timeClient.getHours() >= 23){
-    DisplayBuffer[4] = "No.";
-  }
-  
 }
 
 void getUpdateMBTAtimes(){
-  for(int i = 0; i < 100; i++){
-    MBTAArrivalTimes[i] = 9999;
-  }
   int httpResponseCode  = httpMBTA.GET();
-  // Check for a successful response
   if (httpResponseCode  > 0) {
     String payload = httpMBTA.getString();
     Serial.println(payload);
-    const size_t capacity = JSON_OBJECT_SIZE(10) + 300;
-    DynamicJsonDocument doc(capacity);
+
+    DynamicJsonDocument doc(8192);
     DeserializationError error = deserializeJson(doc, payload);
     if (error) {
       Serial.print(F("deserializeJson() failed: "));
       Serial.println(error.f_str());
+      DisplayBuffer[1] = "JSON Err";
+      DisplayBuffer[2] = "";
+      DisplayBuffer[3] = "";
       return;
     }
-    for(int idx = 0; idx < 100; idx++){
-      JsonObject prediction = doc["data"][idx];
-      if(prediction["attributes"].containsKey("arrival_time") && prediction["attributes"]["arrival_time"] != "None"){
-        if(prediction["relationships"]["stop"]["data"]["id"] == "95"){
-          Serial.print("Index ");
-          Serial.print(idx);
-          Serial.print(" is for stop 95 (Beacon St.) Arrival time: ");
-          String arrivalTime = prediction["attributes"]["arrival_time"].as<String>();
-          String ParsedTime = arrivalTime.substring(11, 16);
-          Serial.println(ParsedTime);
-          if(arrivalTime.substring(13,14) == ":"){
-            MBTAArrivalTimes[idx] = (arrivalTime.substring(11,13).toInt() - timeClient.getHours()) * 60 + arrivalTime.substring(14,16).toInt() - timeClient.getMinutes();
-            if(MBTAArrivalTimes[idx] < 0){
-              MBTAArrivalTimes[idx] = MBTAArrivalTimes[idx] + 24 * 60; //hour wraparound
-            }
-            Serial.println(MBTAArrivalTimes[idx]);
-          }
-        }
+
+    DisplayBuffer[0] = "66 Harvard";
+    DisplayBuffer[1] = "No bus";
+    DisplayBuffer[2] = "";
+    DisplayBuffer[3] = "";
+    DisplayBuffer[4] = "";
+    DisplayBuffer[5] = "";
+    DisplayBuffer[6] = "";
+
+    int line = 1;
+    for (JsonObject prediction : doc["data"].as<JsonArray>()) {
+      const char *routeId = prediction["relationships"]["route"]["data"]["id"] | "";
+      const char *stopId = prediction["relationships"]["stop"]["data"]["id"] | "";
+      if (strcmp(routeId, MBTA_ROUTE_ID) != 0 || strcmp(stopId, MBTA_STOP_ID) != 0) {
+        continue;
       }
-    }
-    for(int line = 1; line < 4; line++){
-      int ShortestArrivalTime = 999;
-      int ShortestArrivalTimeIndex;
-      for(int i = 0; i < 100; i++){
-        if(MBTAArrivalTimes[i] < ShortestArrivalTime && ShortestArrivalTime > 0){
-          ShortestArrivalTime = MBTAArrivalTimes[i];
-          ShortestArrivalTimeIndex = i;
-          Serial.print("Line ");
-          Serial.print(i);
-          Serial.print(" has the shortest time of ");
-          Serial.println(MBTAArrivalTimes[i]);
-        }
+
+      String arrivalTime = prediction["attributes"]["arrival_time"] | "";
+      if (arrivalTime.length() == 0 || arrivalTime == "null" || arrivalTime == "None") {
+        arrivalTime = prediction["attributes"]["departure_time"] | "";
       }
-      if(ShortestArrivalTime < 900){
-        DisplayBuffer[line] = String(ShortestArrivalTime) + " min";
-        LineColorsRed[line] = MBTAColor[0];
-        LineColorsGreen[line] = MBTAColor[1];
-        LineColorsBlue[line] = MBTAColor[2];
-        MBTAArrivalTimes[ShortestArrivalTimeIndex] = 9999;
+      if (arrivalTime.length() < 16) {
+        continue;
       }
-      else{
-        DisplayBuffer[line] = "No. ";
-        LineColorsRed[line] = MBTAColor[0];
-        LineColorsGreen[line] = MBTAColor[1];
-        LineColorsBlue[line] = MBTAColor[2];
+
+      int arrivalMinutes = arrivalTime.substring(11, 13).toInt() * 60 + arrivalTime.substring(14, 16).toInt();
+      int nowMinutes = timeClient.getHours() * 60 + timeClient.getMinutes();
+      int minutesAway = arrivalMinutes - nowMinutes;
+      if (minutesAway < -12 * 60) {
+        minutesAway += 24 * 60;
+      } else if (minutesAway < 0) {
+        minutesAway = 0;
+      }
+
+      if (minutesAway == 0) {
+        DisplayBuffer[line] = "Arriving";
+      } else {
+        DisplayBuffer[line] = String(minutesAway) + " min";
+      }
+      LineColorsRed[line] = MBTAColor[0];
+      LineColorsGreen[line] = MBTAColor[1];
+      LineColorsBlue[line] = MBTAColor[2];
+
+      line++;
+      if (line >= 7) {
+        break;
       }
     }
   }
@@ -307,16 +243,10 @@ void setup() {
 void loop() {
   timeClient.update();
   getUpdateMBTAtimes();
-  if(timeClient.getHours() < 18){
-    getUpdateMITShuttleMorningTimes();
-  }
-  else{
-    getUpdateMITShuttleTimes();
-  }
   Serial.println(timeClient.getFormattedTime().substring(0,5));
   DisplayBuffer[7] = " now:" + timeClient.getFormattedTime().substring(0,5);
   LineColorsRed[7] = DefaultTextColor[0];
   LineColorsGreen[7] = DefaultTextColor[1];
   LineColorsBlue[7] = DefaultTextColor[2];
-  delay(1000 * 10); // 1 minute
+  delay(1000 * 10);
 }
